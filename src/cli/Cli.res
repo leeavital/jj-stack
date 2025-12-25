@@ -12,7 +12,7 @@
 @module("../lib/jjUtils.js")
 external createJjFunctions: JJTypes.jjConfig => JJTypes.jjFunctions = "createJjFunctions"
 @module("../lib/jjUtils.js")
-external isGitHubRemote: string => bool = "isGitHubRemote"
+external hasHost: (string, string) => bool = "hasHost"
 
 @unboxed type argumentValue = String(string) | Boolean(bool)
 
@@ -56,18 +56,28 @@ let resolveRemoteName = async (
   remotes: array<JJTypes.gitRemote>,
   userSpecified: option<string>,
 ): string => {
+
+  let githubInstance = "github.com" // TODO: use gh to guess this
   switch userSpecified {
   | Some(remoteName) => {
       let foundRemote = remotes->Array.find(r => r.name == remoteName)
       switch foundRemote {
       | Some(remote) => {
-          if !isGitHubRemote(remote.url) {
+          // if !isGitHubRemote(remote.url) {
+          //   Console.error(
+          //     `❌ Remote '${remoteName}' is not a GitHub remote. Only GitHub remotes are supported.`,
+          //   )
+          //   exit(1)
+          //   Js.Exn.raiseError("") // unreachable
+          // }
+          if !hasHost(remote.url, githubInstance) {
             Console.error(
               `❌ Remote '${remoteName}' is not a GitHub remote. Only GitHub remotes are supported.`,
             )
             exit(1)
             Js.Exn.raiseError("") // unreachable
           }
+
           remoteName
         }
       | None => {
@@ -78,7 +88,7 @@ let resolveRemoteName = async (
       }
     }
   | None => {
-      let githubRemotes = remotes->Array.filter(r => isGitHubRemote(r.url))
+      let githubRemotes = remotes->Array.filter(r => hasHost(r.url, githubInstance))
       switch githubRemotes->Array.length {
       | 0 => {
           Console.error("❌ No GitHub remotes found. At least one GitHub remote is required.")

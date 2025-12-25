@@ -18,19 +18,20 @@ function createJjFunctions(prim) {
   return JjUtilsJs.createJjFunctions(prim);
 }
 
-function isGitHubRemote(prim) {
-  return JjUtilsJs.isGitHubRemote(prim);
+function hasHost(prim0, prim1) {
+  return JjUtilsJs.hasHost(prim0, prim1);
 }
 
 var help = "🔧 jj-stack - Jujutsu Git workflow automation\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nUSAGE:\n  jj-stack [COMMAND] [OPTIONS]\n\nCOMMANDS:\n  submit <bookmark>     Submit a bookmark and all downstack bookmarks as PRs\n    --dry-run           Show what would be done without making changes\n    --remote <name>     Use the specified Git remote (must be a GitHub remote)\n\n  auth test             Test GitHub authentication\n  auth help             Show authentication help\n\n  help, --help, -h      Show this help message\n\nDEFAULT BEHAVIOR:\n  Running jj-stack without arguments analyzes and displays the current\n  graph of stacked bookmarks.\n\nEXAMPLES:\n  jj-stack                        # Show change graph\n  jj-stack submit feature-branch  # Submit feature-branch and downstack as PRs\n  jj-stack submit feature-branch --dry-run  # Preview what would be done\n  jj-stack submit feature-branch --remote upstream  # Use a specific remote\n  jj-stack auth test              # Test GitHub authentication\n\nFor more information, visit: https://github.com/keanemind/jj-stack\n";
 
 async function resolveRemoteName(remotes, userSpecified) {
+  var githubInstance = "github.com";
   if (userSpecified !== undefined) {
     var foundRemote = remotes.find(function (r) {
           return r.name === userSpecified;
         });
     if (foundRemote !== undefined) {
-      if (!JjUtilsJs.isGitHubRemote(foundRemote.url)) {
+      if (!JjUtilsJs.hasHost(foundRemote.url, githubInstance)) {
         console.error("❌ Remote '" + userSpecified + "' is not a GitHub remote. Only GitHub remotes are supported.");
         process.exit(1);
         Js_exn.raiseError("");
@@ -43,7 +44,7 @@ async function resolveRemoteName(remotes, userSpecified) {
     }
   }
   var githubRemotes = remotes.filter(function (r) {
-        return JjUtilsJs.isGitHubRemote(r.url);
+        return JjUtilsJs.hasHost(r.url, githubInstance);
       });
   var match = githubRemotes.length;
   if (match !== 0) {
@@ -177,7 +178,7 @@ async function main() {
 
 export {
   createJjFunctions ,
-  isGitHubRemote ,
+  hasHost ,
   help ,
   resolveRemoteName ,
   main ,

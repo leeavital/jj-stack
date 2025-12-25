@@ -4,11 +4,11 @@ import * as Js_exn from "rescript/lib/es6/js_exn.js";
 import * as AuthJs from "../lib/auth.js";
 
 function getGitHubAuthRaw(prim) {
-  return AuthJs.getGitHubAuth();
+  return AuthJs.getGitHubAuth(prim);
 }
 
 async function getGitHubAuth() {
-  var result = await AuthJs.getGitHubAuth();
+  var result = await AuthJs.getGitHubAuth("origin");
   var match = result.kind;
   switch (match) {
     case "failure" :
@@ -33,7 +33,8 @@ async function getGitHubAuth() {
                 TAG: "Success",
                 config: {
                   token: result.config.token,
-                  source: tmp
+                  source: tmp,
+                  host: result.config.host
                 }
               };
     default:
