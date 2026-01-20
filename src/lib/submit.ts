@@ -1,11 +1,12 @@
 import { Octokit } from "octokit";
-import { getGitHubAuth } from "./auth.js";
+import { getGitHubAuth, getUrlDetailsForRemote, getAPIUrl } from "./auth.js";
 import type {
   Bookmark,
   ChangeGraph,
   BookmarkSegment,
   NarrowedBookmarkSegment,
 } from "./jjTypes.js";
+import { logger } from "./logger.js";
 import type { JjFunctions } from "./jjUtils.js";
 import { isGitHubRemote } from "./jjUtils.js";
 import * as v from "valibot";
@@ -126,6 +127,7 @@ export function analyzeSubmissionGraph(
 /**
  * Extract GitHub owner and repo from jj git remote URL
  */
+// TODO: can we build this into auth?
 export async function getGitHubRepoInfo(
   jj: JjFunctions,
   remoteName: string,
@@ -142,35 +144,9 @@ export async function getGitHubRepoInfo(
     throw new Error(`No '${remoteName}' remote found`);
   }
 
-  const remoteUrl = targetRemote.url;
+  let urlDetails = await getUrlDetailsForRemote(targetRemote.name);
 
-  // Validate that this is a GitHub remote
-  if (!isGitHubRemote(remoteUrl)) {
-    throw new Error(
-      `Remote '${remoteName}' does not point to GitHub.com: ${remoteUrl}`,
-    );
-  }
-
-  // Parse GitHub URLs - support both HTTPS and SSH formats
-  // HTTPS: https://github.com/owner/repo.git
-  // SSH: git@github.com:owner/repo.git
-  const match = remoteUrl.match(/github\.com[:/]([^/]+)\/([^/.]+)/);
-
-  if (!match) {
-    throw new Error(
-      `Could not parse GitHub repository from remote URL: ${remoteUrl}`,
-    );
-  }
-
-  const owner = match[1];
-  let repo = match[2];
-
-  // Remove .git suffix if present
-  if (repo.endsWith(".git")) {
-    repo = repo.slice(0, -4);
-  }
-
-  return { owner, repo };
+  return { owner: urlDetails.owner, repo: urlDetails.repo };
 }
 
 /**
@@ -181,11 +157,12 @@ export async function getGitHubConfig(
   remoteName: string,
 ): Promise<GitHubConfig> {
   // Get authentication using the auth utility
-  const authResult = await getGitHubAuth();
+  const authResult = await getGitHubAuth(remoteName);
+
   if (authResult.kind !== "success") {
     throw new Error(`GitHub authentication failed: ${authResult.reason}`);
   }
-  const octokit = new Octokit({ auth: authResult.config.token });
+  const octokit = new Octokit({ auth: authResult.config.token, baseUrl: getAPIUrl(authResult.config.host) });
 
   // Try to extract owner/repo from git remote, fall back to environment variables
   let owner = process.env.GITHUB_OWNER;

@@ -7,6 +7,7 @@ type source = [#"gh-cli" | #"env-var"]
 type authConfig = {
   token: string,
   source: source,
+  host: string,
 }
 
 type authDetails = {
@@ -20,11 +21,11 @@ type authResult =
   | Success({config: authConfig})
   | Failure({reason: string})
 
-@module("../lib/auth.js") external getGitHubAuthRaw: unit => promise<{..}> = "getGitHubAuth"
+@module("../lib/auth.js") external getGitHubAuthRaw: string => promise<{..}> = "getGitHubAuth"
 
 // Convert the JS object to a proper ReScript variant
 let getGitHubAuth = async () => {
-  let result = await getGitHubAuthRaw()
+  let result = await getGitHubAuthRaw("origin")
 
   switch result["kind"] {
   | "success" =>
@@ -36,6 +37,7 @@ let getGitHubAuth = async () => {
         | "env-var" => #"env-var"
         | _ => Exn.raiseError("Unexpected config source")
         },
+	host: result["config"]["host"],
       },
     })
   | "failure" => Failure({reason: result["reason"]})

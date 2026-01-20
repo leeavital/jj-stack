@@ -38,6 +38,10 @@ export function isGitHubRemote(remoteUrl: string): boolean {
   return /github\.com[:/]/.test(remoteUrl);
 }
 
+export function hasHost(remoteUrl: string, githubInstanceHost: string): boolean {
+	return true; // TOOD
+}
+
 /**
  * Filter a list of remotes to only include GitHub.com remotes
  */
